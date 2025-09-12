@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Add device by QR code",
-  description: "Add devices using QR code",
+  title: "AI Interview Guide",
+  description: "AI Interview Guide",
 };
 
 export default function RootLayout({ children }) {

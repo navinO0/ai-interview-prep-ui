@@ -12,6 +12,11 @@ import clearToken from "@/utils/removeToken";
 import { getDeviceInfo } from "@/utils/getDeviceInfo";
 import registerUser from "@/utils/registerUser";
 import { useSession } from "next-auth/react";
+import useProtectedRoute from "@/utils/protectedRoute";
+import ReactCodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import Artyom from "artyom.js";
+import removeMd from "remove-markdown";
 // import { cookies } from "next/headers";
 
 
@@ -28,6 +33,7 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [useJD, setUseJD] = useState(false);
   const [jd, setJd] = useState("");
+  const [company, setCompony] = useState("");
   const { data: session } = useSession();
 
   const [loadingQuestion, setLoadingQuestion] = useState(false);
@@ -40,6 +46,8 @@ function App() {
   const recognitionRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_AI_INTERVIEW_HOST;
   const router = useRouter();
+  const artyom = new Artyom();
+  useProtectedRoute()
   useMemo(() => {
     const init = async () => {
 
@@ -78,7 +86,7 @@ function App() {
       setError(null)
       window.speechSynthesis.cancel();
       const res = await axios.post(`${apiUrl}/question`, {
-        role, difficulty, topic
+        role, difficulty, topic,jobDescription: jd, company, have_jd: useJD
       }, {
         headers: {
           Authorization: `Bearer ${Cookies.get("jwt_token")}`
@@ -88,11 +96,10 @@ function App() {
       setQnsId(res.data.data.qns_id);
       setFeedback("");
       setAnswer("");
-
-      const utterance = new SpeechSynthesisUtterance(res.data.data.question);
-      utterance.onend = () => setIsSpeaking(false);
-      setIsSpeaking(true);
-      window.speechSynthesis.speak(utterance);
+      
+      if (process.env.NEXT_PUBLIC_AI_READ_QNS === "true" || false) {
+        artyom.say(removeMd(res.data.data.question));
+      }
     } catch (err) {
       console.error(err);
       setError("Failed to fetch question");
@@ -140,41 +147,42 @@ function App() {
     }
   };
 
-  const startRecording = () => {
-    if (!("webkitSpeechRecognition" in window)) {
+const startRecording = () => {
+    // Check if browser supports speech recognition
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       setError("Speech recognition not supported in this browser. Try Chrome.");
       return;
     }
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    setError(null);
 
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = false;
-    recognitionRef.current.lang = "en-US";
+    // Initialize Artyom for listening
+    artyom.fatality(); // stop any ongoing listening
+    artyom.initialize({
+      lang: "en-GB",
+      continuous: false,
+      listen: true,
+      debug: true,
+      speed: 1,
+    });
 
-    recognitionRef.current.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setAnswer(transcript);
-    };
+    artyom.say("Start speaking now!"); // optional: give a prompt
 
-    recognitionRef.current.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
-    };
+    artyom.addCommands({
+      indexes: ["*"], // listen to anything
+      smart: true,
+      action: (i, spokenText) => {
+        setAnswer(spokenText);
+        // stopRecording(); // stop after receiving speech
+      },
+    });
 
-    recognitionRef.current.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current.start();
     setIsRecording(true);
   };
 
-  const stopRecording = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
+ const stopRecording = () => {
+    artyom.fatality(); 
+    setIsRecording(false);
   };
 
   const getHistory = async () => {
@@ -224,10 +232,9 @@ function App() {
 
 
   return (
-    <div>
-      <div className="min-h-screen h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6">
-        {/* Main Section */}
-        <div className="flex-1 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto min-h-full">
+    <div className="flex flex-col min-h-screen overflow-auto">
+      <div className=" min-h-screen h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 h-screen">
+        <div className="flex-1 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto min-h-screen">
           <h1 className="text-2xl font-bold text-center mb-6">
             AI Interview Coach
           </h1>
@@ -244,7 +251,6 @@ function App() {
             />
           </div>
 
-          {/* Input Controls */}
           {!useJD ? (
             <div className="mb-4 flex gap-3 flex-wrap">
               <TextField
@@ -277,7 +283,13 @@ function App() {
               </FormControl>
             </div>
           ) : (
-            <div className="mb-4">
+            <div className="mb-4 flex gap-3 flex-wrap">
+              <TextField
+                label="company"
+                variant="outlined"
+                value={company}
+                onChange={(e) => setCompony(e.target.value)}
+              />
               <TextField
                 label="Paste Job Description"
                 multiline
@@ -291,7 +303,7 @@ function App() {
             </div>
           )}
 
-          {/* Get Question Button */}
+
           <div className="flex gap-2">
             <button
               onClick={getQuestion}
@@ -313,15 +325,17 @@ function App() {
             )}
           </div>
 
-          {/* Question */}
           {question && (
             <div className="mt-6">
               <h2 className="font-semibold">Question:</h2>
-              <p className="bg-gray-100 p-3 rounded-lg">{question}</p>
+              <div className="bg-gray-100 p-3 rounded-lg">
+              <ReactMarkdown >
+                {question || "Loading..."}
+              </ReactMarkdown>
+                </div>
             </div>
           )}
 
-          {/* Answer Area */}
           {question && (
             <div className="mt-4">
               <textarea
@@ -331,6 +345,13 @@ function App() {
                 rows="4"
                 placeholder="Type or record your answer..."
               ></textarea>
+               {/* <ReactCodeMirror
+        value={answer}
+        height="200px"
+        extensions={[javascript()]}
+        theme="dark"
+        onChange={(value) => setCode(value)}
+      /> */}
               <div className="flex gap-2 mt-3">
                 {!isRecording ? (
                   <button
@@ -390,7 +411,6 @@ function App() {
                 </div>
               )}
 
-              {/* Improvements */}
               {feedback.improvements && (
                 <div className="bg-red-50 p-4 rounded-xl shadow-sm border-l-4 border-red-500">
                   <p className="font-semibold text-red-700 mb-2">Improvements:</p>
@@ -400,7 +420,6 @@ function App() {
                 </div>
               )}
 
-              {/* Missed Points */}
               {feedback.missed_points && (
                 <div className="bg-yellow-50 p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
                   <p className="font-semibold text-yellow-700 mb-2">
@@ -412,7 +431,6 @@ function App() {
                 </div>
               )}
 
-              {/* Extra Feedback */}
               {feedback.sarcastic_feedback && (
                 <div className="bg-blue-50 p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
                   <p className="font-semibold text-blue-700 mb-2">
@@ -422,7 +440,6 @@ function App() {
                 </div>
               )}
 
-              {/* Final Feedback */}
               {feedback.final_feedback && (
                 <div className="bg-purple-50 p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
                   <p className="font-semibold text-purple-700 mb-2">
@@ -431,13 +448,12 @@ function App() {
                   <p className="text-purple-800">{feedback.final_feedback}</p>
                 </div>
               )}
-              {/* Suggested Answer */}
               {feedback.actual_answer && (
                 <div className="bg-gray-50 p-4 rounded-xl shadow-sm border-l-4 border-gray-400">
-                  <p className="font-semibold text-gray-700 mb-2">
+                  <p className="font-semibold mb-2">
                     Suggested Answer:
                   </p>
-                  <div className="prose prose-sm md:prose-base max-w-none text-gray-800 max-h-60 overflow-y-auto pr-2">
+                  <div className="prose prose-sm md:prose-base max-w-none  max-h-60 overflow-y-auto pr-2">
                     <ReactMarkdown>{feedback.actual_answer}</ReactMarkdown>
                   </div>
                 </div>
@@ -447,7 +463,7 @@ function App() {
         </div>
 
 
-        <div className="w-full lg:w-1/3 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto">
+        <div className="w-full h-screen lg:w-1/3 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto">
           <h1 className="text-xl font-bold text-gray-800 mb-4">History</h1>
           {loadingHistory ? (
             <div className="flex items-center justify-center py-10">
