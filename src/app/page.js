@@ -46,7 +46,12 @@ function App() {
   const recognitionRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_AI_INTERVIEW_HOST;
   const router = useRouter();
-  const artyom = new Artyom();
+  const artyomRef = useRef(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      artyomRef.current = new Artyom();
+    }
+  }, []);
   useProtectedRoute()
   useMemo(() => {
     const init = async () => {
@@ -80,13 +85,27 @@ function App() {
     };
   }, []);
 
+   const speakQuestion = (text) => {
+          if (!artyomRef.current) return;
+          setIsSpeaking(true);
+          artyomRef.current.say(removeMd(text), {
+            onEnd: () => setIsSpeaking(false),
+          });
+  };
+  
+   const stopSpeaking = () => {
+          if (!artyomRef.current) return;
+          artyomRef.current.fatality(); // stops speaking immediately
+          setIsSpeaking(false);
+        };
+
   const getQuestion = async () => {
     try {
       setLoadingQuestion(true);
       setError(null)
       // window.speechSynthesis.cancel();
       const res = await axios.post(`${apiUrl}/question`, {
-        role, difficulty, topic,jobDescription: jd, company, have_jd: useJD
+        role, difficulty, topic, jobDescription: jd, company, have_jd: useJD
       }, {
         headers: {
           Authorization: `Bearer ${Cookies.get("jwt_token")}`
@@ -96,9 +115,12 @@ function App() {
       setQnsId(res.data.data.qns_id);
       setFeedback("");
       setAnswer("");
-      
+
       if (process.env.NEXT_PUBLIC_AI_READ_QNS === "true" || false) {
-        artyom.say(removeMd(res.data.data.question));
+        // artyom.say(removeMd(res.data.data.question));
+
+       
+        speakQuestion(removeMd(res.data.data.question))
       }
     } catch (err) {
       console.error(err);
@@ -148,42 +170,42 @@ function App() {
   };
 
 const startRecording = () => {
-    // Check if browser supports speech recognition
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      setError("Speech recognition not supported in this browser. Try Chrome.");
-      return;
-    }
+  if (!artyomRef.current) return;
 
-    setError(null);
+  if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+    setError("Speech recognition not supported in this browser. Try Chrome.");
+    return;
+  }
 
-    // Initialize Artyom for listening
-    artyom.fatality(); // stop any ongoing listening
-    artyom.initialize({
-      lang: "en-GB",
-      continuous: false,
-      listen: true,
-      debug: true,
-      speed: 1,
-    });
+  artyomRef.current.fatality(); // stop previous sessions
+  artyomRef.current.initialize({
+    lang: "en-GB",
+    continuous: false,
+    listen: true,
+    debug: true,
+    speed: 1,
+  });
 
-    artyom.say("Start speaking now!"); // optional: give a prompt
+  artyomRef.current.say("Start speaking now!");
 
-    artyom.addCommands({
-      indexes: ["*"], // listen to anything
-      smart: true,
-      action: (i, spokenText) => {
-        setAnswer(spokenText);
-        // stopRecording(); // stop after receiving speech
-      },
-    });
+  artyomRef.current.addCommands({
+    indexes: ["*"], // catch everything
+    smart: true,
+    action: (i, spokenText) => {
+      setAnswer(spokenText);
+      // stopRecording(); // auto stop after speaking
+    },
+  });
 
-    setIsRecording(true);
-  };
+  setIsRecording(true);
+};
 
- const stopRecording = () => {
-    artyom.fatality(); 
-    setIsRecording(false);
-  };
+const stopRecording = () => {
+  if (!artyomRef.current) return;
+  artyomRef.current.fatality(); // stops listening
+  setIsRecording(false);
+};
+
 
   const getHistory = async () => {
     try {
@@ -329,10 +351,10 @@ const startRecording = () => {
             <div className="mt-6">
               <h2 className="font-semibold">Question:</h2>
               <div className="bg-gray-100 p-3 rounded-lg">
-              <ReactMarkdown >
-                {question || "Loading..."}
-              </ReactMarkdown>
-                </div>
+                <ReactMarkdown >
+                  {question || "Loading..."}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 
@@ -345,7 +367,7 @@ const startRecording = () => {
                 rows="4"
                 placeholder="Type or record your answer..."
               ></textarea>
-               {/* <ReactCodeMirror
+              {/* <ReactCodeMirror
         value={answer}
         height="200px"
         extensions={[javascript()]}
