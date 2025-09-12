@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import axios from "axios";
 import { FormControl, FormControlLabel, MenuItem, Select, Switch, TextField } from "@mui/material";
 import HistoryCard from "@/components/historyCard";
@@ -7,6 +7,13 @@ import ReactMarkdown from "react-markdown";
 import ErroToaster from "@/utils/errorToaster";
 import Header from "@/utils/header";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import clearToken from "@/utils/removeToken";
+import { getDeviceInfo } from "@/utils/getDeviceInfo";
+import registerUser from "@/utils/registerUser";
+import { useSession } from "next-auth/react";
+// import { cookies } from "next/headers";
+
 
 function App() {
   const [role, setRole] = useState("node.js backend developer");
@@ -21,16 +28,42 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [useJD, setUseJD] = useState(false);
   const [jd, setJd] = useState("");
+  const { data: session } = useSession();
 
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   const [error, setError] = useState(null)
+  const [deviceInfo, setDeviceInfo] = useState(null);
 
   const recognitionRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_AI_INTERVIEW_HOST;
+  const router = useRouter();
+  useMemo(() => {
+    const init = async () => {
 
+      if (!session?.user?.token || session?.user?.token === "undefined") return;
+      const Dinfo = await getDeviceInfo();
+      setDeviceInfo(Dinfo);
+
+      await registerUser(session.user, ['username', 'email', 'first_name'], Dinfo);
+
+
+      // const token = Cookies.get("jwt_token");
+      // if (token) {
+      //   setUserData(parseToken(token));
+      // }
+
+      // const redirect = Cookies.get("redirect");
+      // if (redirect) {
+      //   Cookies.remove("redirect");
+      //   router.push(redirect);
+      // }
+    };
+
+    init();
+  }, []);
   useEffect(() => {
     getHistory();
     return () => {
@@ -63,6 +96,11 @@ function App() {
     } catch (err) {
       console.error(err);
       setError("Failed to fetch question");
+      if (err.response && err.response.status === 401 || err.response.status === 401) {
+        Cookies.remove('jwt_token');
+        router.push("/session-expired");
+        clearToken()
+      }
     } finally {
       setLoadingQuestion(false);
     }
@@ -92,6 +130,11 @@ function App() {
     } catch (err) {
       console.error(err);
       setError("Failed to get feedback");
+      if (err.response && err.response.status === 401 || err.response.status === 401) {
+        Cookies.remove('jwt_token');
+        router.push("/session-expired");
+        clearToken()
+      }
     } finally {
       setLoadingSubmit(false);
     }
@@ -137,33 +180,48 @@ function App() {
   const getHistory = async () => {
     try {
       setLoadingHistory(true);
-      setError(null)
-      const res = await axios.post(`${apiUrl}/history`, {}, {
-        headers: {
-          Authorization: `Bearer ${Cookies.get("jwt_token")}`
+      setError(null);
+
+      setTimeout(async () => {
+        try {
+          const res = await axios.post(`${apiUrl}/history`, {}, {
+            headers: {
+              Authorization: `Bearer ${Cookies.get('jwt_token')}`
+            }
+          });
+
+          if (res?.data?.data?.history) {
+            const historyData = res.data.data.history.map((item) => ({
+              id: item.question_id,
+              label: item.question,
+              children: [
+                { id: `${item.id}-answer`, label: `Answer : ${item.answer}` },
+                { id: `${item.id}-actual-answer`, label: `Actual Answer : ${item.actual_answer}` },
+              ],
+            }));
+            setHistory(historyData);
+          }
+        } catch (err) {
+          console.error(err);
+          setError("Failed to get history");
+
+          if (err.response && err.response.status === 401) {
+            Cookies.remove("jwt_token");
+            clearToken();
+            router.push("/session-expired");
+          }
+        } finally {
+          setLoadingHistory(false);
         }
-      });
-      if (res && res.data.data.history) {
-        const historyData = res.data.data.history.map((item) => ({
-          id: item.question_id,
-          label: item.question,
-          children: [
-            { id: `${item.id}-answer`, label: `Answer : ${item.answer}` },
-            {
-              id: `${item.id}-actual-answer`,
-              label: `Actual Answer : ${item.actual_answer}`,
-            },
-          ],
-        }));
-        setHistory(historyData);
-      }
+      }, 3000);
+
     } catch (err) {
-      console.error(err);
-      setError("Failed to get history");
-    } finally {
+      console.error("Unexpected error in getHistory wrapper:", err);
+      setError("Unexpected error occurred");
       setLoadingHistory(false);
     }
   };
+
 
   return (
     <div>
@@ -239,8 +297,8 @@ function App() {
               onClick={getQuestion}
               disabled={loadingQuestion}
               className={`flex-1 rounded-lg px-4 py-2 transition text-white ${loadingQuestion
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
                 }`}
             >
               {loadingQuestion ? "Loading..." : "Get Question"}
@@ -279,8 +337,8 @@ function App() {
                     onClick={startRecording}
                     disabled={loadingSubmit}
                     className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                        ? "bg-purple-400 cursor-not-allowed"
-                        : "bg-purple-600 hover:bg-purple-700"
+                      ? "bg-purple-400 cursor-not-allowed"
+                      : "bg-purple-600 hover:bg-purple-700"
                       }`}
                   >
                     Start Recording
@@ -298,8 +356,8 @@ function App() {
                   onClick={submitAnswer}
                   disabled={loadingSubmit}
                   className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                      ? "bg-green-400 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
+                    ? "bg-green-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
                     }`}
                 >
                   {loadingSubmit ? "Submitting..." : "Submit Answer"}

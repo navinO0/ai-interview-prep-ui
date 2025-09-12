@@ -52,9 +52,9 @@ const Header = () => {
       {/* <h1 className="text-3xl md:text-4xl  text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 ml-5 drop-shadow-lg tracking-tight">
   Hello User 👋
 </h1> */}
-      {/* <div>
+      <div>
         <UserHeader />
-        </div> */}
+        </div>
 
       <Menubar className="flex justify-end border-none shadow-none space-x-6 p-7 border-b flex-shrink-0 bg-transparent text-white">
         <MenubarMenu>
