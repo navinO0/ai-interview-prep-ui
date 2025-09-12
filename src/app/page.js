@@ -75,7 +75,7 @@ function App() {
   useEffect(() => {
     getHistory();
     return () => {
-      window.speechSynthesis.cancel();
+      // window.speechSynthesis.cancel();
       setError(null)
     };
   }, []);
@@ -84,7 +84,7 @@ function App() {
     try {
       setLoadingQuestion(true);
       setError(null)
-      window.speechSynthesis.cancel();
+      // window.speechSynthesis.cancel();
       const res = await axios.post(`${apiUrl}/question`, {
         role, difficulty, topic,jobDescription: jd, company, have_jd: useJD
       }, {
@@ -113,16 +113,16 @@ function App() {
     }
   };
 
-  const stopSpeaking = () => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  };
+  // const stopSpeaking = () => {
+  //   window.speechSynthesis.cancel();
+  //   setIsSpeaking(false);
+  // };
 
   const submitAnswer = async () => {
     try {
       setLoadingSubmit(true);
       setError(null)
-      stopSpeaking();
+      // stopSpeaking();
       const res = await axios.post(`${apiUrl}/feedback`, {
         role,
         answer,
