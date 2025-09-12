@@ -255,7 +255,7 @@ const stopRecording = () => {
 
   return (
     <div className="flex flex-col min-h-screen overflow-auto">
-      <div className=" min-h-screen h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 h-screen">
+      <div className=" h-full h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 h-screen">
         <div className="flex-1 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto min-h-screen">
           <h1 className="text-2xl font-bold text-center mb-6">
             AI Interview Coach
@@ -485,7 +485,7 @@ const stopRecording = () => {
         </div>
 
 
-        <div className="w-full h-screen lg:w-1/3 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto">
+        <div className="w-full min-h-screen lg:w-1/3 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto">
           <h1 className="text-xl font-bold text-gray-800 mb-4">History</h1>
           {loadingHistory ? (
             <div className="flex items-center justify-center py-10">

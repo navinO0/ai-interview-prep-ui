@@ -74,7 +74,7 @@ const UserHeader = () => {
                     alt="Profile"
                     className="w-10 h-10 rounded-full border border-gray-500 object-cover"
                 />
-                <span className="text-lg font-medium">
+                <span className="text-sm font-medium">
                     {`${userData.first_name || session?.user?.name || ""}`.trim()}
                 </span>
             </div>
