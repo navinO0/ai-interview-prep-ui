@@ -1,4 +1,5 @@
 "use client";
+import TruncatedMarkdown from "@/utils/truncatedMarkdown";
 import * as Accordion from "@radix-ui/react-accordion";
 import ReactMarkdown from "react-markdown";
 
@@ -35,9 +36,10 @@ export default function HistoryCard({ history }) {
         >
           <Accordion.Header className="bg-gray-100 hover:bg-gray-200 transition">
             <Accordion.Trigger className="w-full text-left px-4 py-3 font-semibold text-base sm:text-lg">
-              <ReactMarkdown>{item.label}</ReactMarkdown>
+              <TruncatedMarkdown text={item.label} />
             </Accordion.Trigger>
           </Accordion.Header>
+
 
           <Accordion.Content className="px-4 py-3 space-y-2 bg-gray-50 text-sm sm:text-base">
             {item.children?.map((child) => (

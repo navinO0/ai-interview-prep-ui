@@ -62,7 +62,7 @@ const UserHeader = () => {
 
 
     return (
-        <div className="w-full flex items-center justify-between p-4 bg-slate-900 text-white shadow-md">
+        <div className="w-full flex items-center justify-between p-4 text-white">
             {error && <ErroToaster message={error} />}
             <div className="flex items-center gap-3">
                 <img
@@ -72,11 +72,12 @@ const UserHeader = () => {
                         "https://res.cloudinary.com/dzapdxkgc/image/upload/v1742595352/download_ykpnl5.png"
                     }
                     alt="Profile"
-                    className="w-10 h-10 rounded-full border border-gray-500 object-cover"
+                    className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border border-gray-500 object-cover"
                 />
-                <span className="text-sm font-medium">
+                <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">
                     {`${userData.first_name || session?.user?.name || ""}`.trim()}
                 </span>
+
             </div>
         </div>
     );

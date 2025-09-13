@@ -42,13 +42,13 @@ const Header = () => {
   }, []);
 
   if (!isLoggedIn) return (
-    <div className="flex-1 flex justify-between items-center relative gap-4 pl-2 bg-gradient-to-r from-slate-900 to-slate-800"></div>
+    <div className="flex-1 flex justify-between items-center relative gap-4 pl-2 bg-gradient-to-r from-slate-900 to-slate-800 max-h-[8vh]"></div>
   );
 
   const handleOpenChange = () => setIsOpen(() => !isOpen);
 
   return (
-    <div className="flex-1 flex justify-between items-center relative gap-4 pl-2 bg-gradient-to-r from-slate-900 to-slate-800">
+    <div className="flex-1 flex justify-between items-center relative gap-4 pl-2 bg-gradient-to-r from-slate-900 to-slate-800 max-h-[8vh]">
       {/* <h1 className="text-3xl md:text-4xl  text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 ml-5 drop-shadow-lg tracking-tight">
   Hello User 👋
 </h1> */}

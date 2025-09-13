@@ -35,6 +35,7 @@ function App() {
   const [jd, setJd] = useState("");
   const [company, setCompony] = useState("");
   const { data: session } = useSession();
+  const [questionType, setQuestionType] = useState("General");
 
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -85,27 +86,34 @@ function App() {
     };
   }, []);
 
-   const speakQuestion = (text) => {
-          if (!artyomRef.current) return;
-          setIsSpeaking(true);
-          artyomRef.current.say(removeMd(text), {
-            onEnd: () => setIsSpeaking(false),
-          });
+  const speakQuestion = (text) => {
+    if (!artyomRef.current && questionType.toLowerCase() === "coding") return;
+    setIsSpeaking(true);
+    artyomRef.current.say(removeMd(text), {
+      onEnd: () => setIsSpeaking(false),
+    });
   };
-  
-   const stopSpeaking = () => {
-          if (!artyomRef.current) return;
-          artyomRef.current.fatality(); // stops speaking immediately
-          setIsSpeaking(false);
-        };
+  const stopSpeaking = () => {
+    if (!artyomRef.current) return;
+
+    artyomRef.current.fatality();
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    setIsSpeaking(false);
+  };
+
 
   const getQuestion = async () => {
     try {
       setLoadingQuestion(true);
       setError(null)
+      stopSpeaking()
       // window.speechSynthesis.cancel();
       const res = await axios.post(`${apiUrl}/question`, {
-        role, difficulty, topic, jobDescription: jd, company, have_jd: useJD
+        role, difficulty, topic, jobDescription: jd, company, have_jd: useJD, question_type : questionType
       }, {
         headers: {
           Authorization: `Bearer ${Cookies.get("jwt_token")}`
@@ -119,8 +127,10 @@ function App() {
       if (process.env.NEXT_PUBLIC_AI_READ_QNS === "true" || false) {
         // artyom.say(removeMd(res.data.data.question));
 
-       
-        speakQuestion(removeMd(res.data.data.question))
+        if(questionType.toLowerCase() !== "coding") {
+          speakQuestion(removeMd(res.data.data.question))
+        }
+        
       }
     } catch (err) {
       console.error(err);
@@ -169,42 +179,42 @@ function App() {
     }
   };
 
-const startRecording = () => {
-  if (!artyomRef.current) return;
+  const startRecording = () => {
+    if (!artyomRef.current) return;
 
-  if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-    setError("Speech recognition not supported in this browser. Try Chrome.");
-    return;
-  }
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      setError("Speech recognition not supported in this browser. Try Chrome.");
+      return;
+    }
 
-  artyomRef.current.fatality(); // stop previous sessions
-  artyomRef.current.initialize({
-    lang: "en-GB",
-    continuous: false,
-    listen: true,
-    debug: true,
-    speed: 1,
-  });
+    artyomRef.current.fatality(); // stop previous sessions
+    artyomRef.current.initialize({
+      lang: "en-GB",
+      continuous: false,
+      listen: true,
+      debug: true,
+      speed: 1,
+    });
 
-  artyomRef.current.say("Start speaking now!");
+    artyomRef.current.say("Start speaking now!");
 
-  artyomRef.current.addCommands({
-    indexes: ["*"], // catch everything
-    smart: true,
-    action: (i, spokenText) => {
-      setAnswer(spokenText);
-      // stopRecording(); // auto stop after speaking
-    },
-  });
+    artyomRef.current.addCommands({
+      indexes: ["*"], // catch everything
+      smart: true,
+      action: (i, spokenText) => {
+        setAnswer(spokenText);
+        // stopRecording(); // auto stop after speaking
+      },
+    });
 
-  setIsRecording(true);
-};
+    setIsRecording(true);
+  };
 
-const stopRecording = () => {
-  if (!artyomRef.current) return;
-  artyomRef.current.fatality(); // stops listening
-  setIsRecording(false);
-};
+  const stopRecording = () => {
+    if (!artyomRef.current) return;
+    artyomRef.current.fatality(); // stops listening
+    setIsRecording(false);
+  };
 
 
   const getHistory = async () => {
@@ -254,9 +264,9 @@ const stopRecording = () => {
 
 
   return (
-    <div className="flex flex-col min-h-screen overflow-auto">
-      <div className=" h-full h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 h-screen">
-        <div className="flex-1 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto min-h-screen">
+    <div className="flex flex-col  overflow-y-auto h-[92vh] ">
+      <div className=" h-full h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 overflow-y-auto ">
+        <div className="flex-1 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto min-h-[80vh]">
           <h1 className="text-2xl font-bold text-center mb-6">
             AI Interview Coach
           </h1>
@@ -301,6 +311,20 @@ const stopRecording = () => {
                   <MenuItem value="easy">Easy</MenuItem>
                   <MenuItem value="medium">Medium</MenuItem>
                   <MenuItem value="hard">Hard</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl sx={{ minWidth: 160 }}>
+                <Select
+                  value={questionType}
+                  onChange={(e) => setQuestionType(e.target.value)}
+                >
+                  <MenuItem value="General">
+                    <em>Select question Type</em>
+                  </MenuItem>
+                  <MenuItem value="coding">Coding</MenuItem>
+                  <MenuItem value="situational">Situational</MenuItem>
+                  <MenuItem value="theory">General</MenuItem>
+                  <MenuItem value="technical">Technical</MenuItem>
                 </Select>
               </FormControl>
             </div>
@@ -485,10 +509,10 @@ const stopRecording = () => {
         </div>
 
 
-        <div className="w-full min-h-screen lg:w-1/3 bg-white shadow-lg rounded-2xl p-6 overflow-y-auto">
-          <h1 className="text-xl font-bold text-gray-800 mb-4">History</h1>
+        <div className="w-full  lg:w-1/3 bg-white shadow-lg rounded-2xl overflow-y-auto w-[100%] min-h-[80vh]">
+          <h1 className="text-xl font-bold text-gray-800 mb-4 text-center m-3">History</h1>
           {loadingHistory ? (
-            <div className="flex items-center justify-center py-10">
+            <div className="flex items-center justify-center  py-10">
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
