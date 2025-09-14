@@ -1,11 +1,8 @@
 "use client";
 import { useState, useRef, useEffect, useMemo } from "react";
 import axios from "axios";
-import { FormControl, FormControlLabel, MenuItem, Select, Switch, TextField } from "@mui/material";
 import HistoryCard from "@/components/historyCard";
-import ReactMarkdown from "react-markdown";
 import ErroToaster from "@/utils/errorToaster";
-import Header from "@/utils/header";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import clearToken from "@/utils/removeToken";
@@ -13,11 +10,11 @@ import { getDeviceInfo } from "@/utils/getDeviceInfo";
 import registerUser from "@/utils/registerUser";
 import { useSession } from "next-auth/react";
 import useProtectedRoute from "@/utils/protectedRoute";
-import ReactCodeMirror from "@uiw/react-codemirror";
-import { javascript } from "@codemirror/lang-javascript";
 import Artyom from "artyom.js";
 import removeMd from "remove-markdown";
-// import { cookies } from "next/headers";
+import CodePlayground from "./testpage/page";
+import Feedbackpg from "@/utils/feedbackpg";
+import InterviewForm from "@/utils/interviewForm";
 
 
 function App() {
@@ -113,7 +110,7 @@ function App() {
       stopSpeaking()
       // window.speechSynthesis.cancel();
       const res = await axios.post(`${apiUrl}/question`, {
-        role, difficulty, topic, jobDescription: jd, company, have_jd: useJD, question_type : questionType
+        role, difficulty, topic, jobDescription: jd, company, have_jd: useJD, question_type: questionType
       }, {
         headers: {
           Authorization: `Bearer ${Cookies.get("jwt_token")}`
@@ -127,10 +124,10 @@ function App() {
       if (process.env.NEXT_PUBLIC_AI_READ_QNS === "true" || false) {
         // artyom.say(removeMd(res.data.data.question));
 
-        if(questionType.toLowerCase() !== "coding") {
+        if (questionType.toLowerCase() !== "coding") {
           speakQuestion(removeMd(res.data.data.question))
         }
-        
+
       }
     } catch (err) {
       console.error(err);
@@ -154,7 +151,7 @@ function App() {
     try {
       setLoadingSubmit(true);
       setError(null)
-      // stopSpeaking();
+      stopSpeaking();
       const res = await axios.post(`${apiUrl}/feedback`, {
         role,
         answer,
@@ -262,6 +259,11 @@ function App() {
     }
   };
 
+  const onClickNexQns = () => {
+    setFeedback(null);
+    getQuestion();
+  }
+
 
   return (
     <div className="flex flex-col  overflow-y-auto h-[92vh] ">
@@ -271,252 +273,65 @@ function App() {
             AI Interview Coach
           </h1>
 
-          <div className="mb-4">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useJD}
-                  onChange={(e) => setUseJD(e.target.checked)}
-                />
-              }
-              label="Have job Description ?"
-            />
-          </div>
+          {!feedback ? (<InterviewForm
+            useJD={useJD}
+            setUseJD={setUseJD}
+            role={role}
+            setRole={setRole}
+            topic={topic}
+            setTopic={setTopic}
+            difficulty={difficulty}
+            setDifficulty={setDifficulty}
+            questionType={questionType}
+            setQuestionType={setQuestionType}
+            company={company}
+            setCompany={setCompony}
+            jd={jd}
+            setJd={setJd}
+            answer={answer}
+            setAnswer={setAnswer}
+            question={question}
+            loadingQuestion={loadingQuestion}
+            getQuestion={getQuestion}
+            isSpeaking={isSpeaking}
+            stopSpeaking={stopSpeaking}
+            isRecording={isRecording}
+            startRecording={startRecording}
+            stopRecording={stopRecording}
+            submitAnswer={submitAnswer}
+            loadingSubmit={loadingSubmit}
+          />) :
 
-          {!useJD ? (
-            <div className="mb-4 flex gap-3 flex-wrap">
-              <TextField
-                label="Role"
-                variant="outlined"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              />
-
-              <TextField
-                label="Topic"
-                variant="outlined"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-              />
-
-              <FormControl sx={{ minWidth: 120 }}>
-                <Select
-                  value={difficulty}
-                  displayEmpty
-                  onChange={(e) => setDifficulty(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
-                  </MenuItem>
-                  <MenuItem value="easy">Easy</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="hard">Hard</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl sx={{ minWidth: 160 }}>
-                <Select
-                  value={questionType}
-                  onChange={(e) => setQuestionType(e.target.value)}
-                >
-                  <MenuItem value="General">
-                    <em>Select question Type</em>
-                  </MenuItem>
-                  <MenuItem value="coding">Coding</MenuItem>
-                  <MenuItem value="situational">Situational</MenuItem>
-                  <MenuItem value="theory">General</MenuItem>
-                  <MenuItem value="technical">Technical</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-          ) : (
-            <div className="mb-4 flex gap-3 flex-wrap">
-              <TextField
-                label="company"
-                variant="outlined"
-                value={company}
-                onChange={(e) => setCompony(e.target.value)}
-              />
-              <TextField
-                label="Paste Job Description"
-                multiline
-                rows={6}
-                fullWidth
-                variant="outlined"
-                value={jd}
-                onChange={(e) => setJd(e.target.value)}
-                placeholder="Paste the full JD here..."
-              />
-            </div>
-          )}
-
-
-          <div className="flex gap-2">
-            <button
-              onClick={getQuestion}
-              disabled={loadingQuestion}
-              className={`flex-1 rounded-lg px-4 py-2 transition text-white ${loadingQuestion
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-                }`}
-            >
-              {loadingQuestion ? "Loading..." : "Get Question"}
-            </button>
-            {isSpeaking && (
-              <button
-                onClick={stopSpeaking}
-                className="bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 transition"
-              >
-                Stop Speech
-              </button>
-            )}
-          </div>
-
-          {question && (
-            <div className="mt-6">
-              <h2 className="font-semibold">Question:</h2>
-              <div className="bg-gray-100 p-3 rounded-lg">
-                <ReactMarkdown >
-                  {question || "Loading..."}
-                </ReactMarkdown>
-              </div>
-            </div>
-          )}
-
-          {question && (
-            <div className="mt-4">
-              <textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="4"
-                placeholder="Type or record your answer..."
-              ></textarea>
-              {/* <ReactCodeMirror
-        value={answer}
-        height="200px"
-        extensions={[javascript()]}
-        theme="dark"
-        onChange={(value) => setCode(value)}
-      /> */}
-              <div className="flex gap-2 mt-3">
-                {!isRecording ? (
+            (
+              <>
+                <Feedbackpg feedback={feedback} />
+                <div className="flex gap-4 flex-end mt-4">
                   <button
-                    onClick={startRecording}
-                    disabled={loadingSubmit}
-                    className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                      ? "bg-purple-400 cursor-not-allowed"
-                      : "bg-purple-600 hover:bg-purple-700"
+                    onClick={onClickNexQns}
+                    className={`flex-1 rounded-lg px-4 py-2 transition text-white cursor-pointer ${loadingQuestion
+                        ? "bg-blue-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
                       }`}
                   >
-                    Start Recording
+                    Next Question
                   </button>
-                ) : (
-                  <button
-                    onClick={stopRecording}
-                    className="w-1/2 bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 transition"
-                  >
-                    Stop Recording
-                  </button>
-                )}
-
-                <button
-                  onClick={submitAnswer}
-                  disabled={loadingSubmit}
-                  className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                    ? "bg-green-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700"
-                    }`}
-                >
-                  {loadingSubmit ? "Submitting..." : "Submit Answer"}
-                </button>
-              </div>
-            </div>
-          )}
-
-
-
-          {feedback && (
-            <div className="mt-6 space-y-6">
-              <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
-                Feedback Summary
-              </h2>
-              <div className="bg-gray-100 p-4 rounded-xl shadow-sm border-l-4 border-indigo-500">
-                <p className="text-lg">
-                  <span className="font-semibold text-indigo-700">Score:</span>{" "}
-                  <span className="font-bold">{feedback.score} / 10</span>
-                </p>
-              </div>
-
-              {/* Strengths */}
-              {feedback.strengths && (
-                <div className="bg-green-50 p-4 rounded-xl shadow-sm border-l-4 border-green-500">
-                  <p className="font-semibold text-green-700 mb-2">Strengths:</p>
-                  <ul className="list-disc pl-6 text-green-800 space-y-1">
-                    {feedback.strengths}
-                  </ul>
                 </div>
-              )}
-
-              {feedback.improvements && (
-                <div className="bg-red-50 p-4 rounded-xl shadow-sm border-l-4 border-red-500">
-                  <p className="font-semibold text-red-700 mb-2">Improvements:</p>
-                  <ul className="list-disc pl-6 text-red-800 space-y-1">
-                    {feedback.improvements}
-                  </ul>
-                </div>
-              )}
-
-              {feedback.missed_points && (
-                <div className="bg-yellow-50 p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                  <p className="font-semibold text-yellow-700 mb-2">
-                    Missed Points:
-                  </p>
-                  <ul className="list-disc pl-6 text-yellow-800 space-y-1">
-                    {feedback.missed_points}
-                  </ul>
-                </div>
-              )}
-
-              {feedback.sarcastic_feedback && (
-                <div className="bg-blue-50 p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                  <p className="font-semibold text-blue-700 mb-2">
-                    Extra Feedback:
-                  </p>
-                  <p className="text-blue-800">{feedback.sarcastic_feedback}</p>
-                </div>
-              )}
-
-              {feedback.final_feedback && (
-                <div className="bg-purple-50 p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
-                  <p className="font-semibold text-purple-700 mb-2">
-                    Final Feedback:
-                  </p>
-                  <p className="text-purple-800">{feedback.final_feedback}</p>
-                </div>
-              )}
-              {feedback.actual_answer && (
-                <div className="bg-gray-50 p-4 rounded-xl shadow-sm border-l-4 border-gray-400">
-                  <p className="font-semibold mb-2">
-                    Suggested Answer:
-                  </p>
-                  <div className="prose prose-sm md:prose-base max-w-none  max-h-60 overflow-y-auto pr-2">
-                    <ReactMarkdown>{feedback.actual_answer}</ReactMarkdown>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+              </>
+            )}
         </div>
 
 
         <div className="w-full  lg:w-1/3 bg-white shadow-lg rounded-2xl overflow-y-auto w-[100%] min-h-[80vh]">
-          <h1 className="text-xl font-bold text-gray-800 mb-4 text-center m-3">History</h1>
+
           {loadingHistory ? (
             <div className="flex items-center justify-center  py-10">
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <HistoryCard history={history} />
+            questionType.toLowerCase() !== "coding" ? <div> <h1 className="text-xl font-bold text-gray-800 mb-4 text-center m-3">History</h1>
+              <HistoryCard history={history} />
+            </div> :
+              <CodePlayground code={answer} setCode={setAnswer} />
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@
 import TruncatedMarkdown from "@/utils/truncatedMarkdown";
 import * as Accordion from "@radix-ui/react-accordion";
 import ReactMarkdown from "react-markdown";
+import { ChevronDown } from "lucide-react";
 
 export default function HistoryCard({ history }) {
   const data = history || [
@@ -25,8 +26,8 @@ export default function HistoryCard({ history }) {
   return (
     <Accordion.Root
       type="multiple"
-      className="w-full h-full bg-white rounded-lg shadow divide-y divide-gray-200 
-                 sm:max-w-full md:max-w-3xl lg:max-w-5xl mx-auto"
+      className="w-full bg-white rounded-2xl shadow-lg divide-y divide-gray-200 
+                 sm:max-w-full md:max-w-3xl lg:max-w-5xl mx-auto overflow-hidden"
     >
       {data.map((item) => (
         <Accordion.Item
@@ -34,18 +35,27 @@ export default function HistoryCard({ history }) {
           value={item.id}
           className="border-b last:border-none"
         >
-          <Accordion.Header className="bg-gray-100 hover:bg-gray-200 transition">
-            <Accordion.Trigger className="w-full text-left px-4 py-3 font-semibold text-base sm:text-lg">
+          <Accordion.Header>
+            <Accordion.Trigger
+              className="w-full flex justify-between text-left items-start px-5 py-4 
+                         font-semibold text-gray-800 text-base sm:text-lg 
+                         hover:bg-gray-100 transition-colors group"
+            >
               <TruncatedMarkdown text={item.label} />
+              <ChevronDown
+                className="h-5 w-5 text-gray-500 transition-transform duration-300 group-data-[state=open]:rotate-180"
+              />
             </Accordion.Trigger>
           </Accordion.Header>
 
-
-          <Accordion.Content className="px-4 py-3 space-y-2 bg-gray-50 text-sm sm:text-base">
+          <Accordion.Content
+            className="px-5 py-4 bg-gray-50 text-sm sm:text-base 
+                       text-gray-700 leading-relaxed animate-accordion-down"
+          >
             {item.children?.map((child) => (
               <div
                 key={child.id}
-                className="pl-4 border-l-2 border-gray-300"
+                className="pl-4 border-l-2 border-blue-400/70 mb-3 last:mb-0"
               >
                 <ReactMarkdown>{child.label}</ReactMarkdown>
               </div>
