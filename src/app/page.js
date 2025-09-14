@@ -15,6 +15,7 @@ import removeMd from "remove-markdown";
 import CodePlayground from "./testpage/page";
 import Feedbackpg from "@/utils/feedbackpg";
 import InterviewForm from "@/utils/interviewForm";
+import AiLoader from "@/utils/aiLoader";
 
 
 function App() {
@@ -49,6 +50,10 @@ function App() {
     if (typeof window !== "undefined") {
       artyomRef.current = new Artyom();
     }
+    return () => {
+      stopSpeaking()
+    }
+    
   }, []);
   useProtectedRoute()
   useMemo(() => {
@@ -308,9 +313,9 @@ function App() {
                 <div className="flex gap-4 flex-end mt-4">
                   <button
                     onClick={onClickNexQns}
-                    className={`flex-1 rounded-lg px-4 py-2 transition text-white cursor-pointer ${loadingQuestion
-                        ? "bg-blue-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700"
+                    className={`flex-1 rounded-lg px-4 py-2 !transition button !text-white cursor-pointer ${loadingQuestion
+                        ? "!bg-blue-400 !cursor-not-allowed"
+                        : "!bg-blue-600 !hover:bg-blue-700"
                       }`}
                   >
                     Next Question
@@ -324,8 +329,9 @@ function App() {
         <div className="w-full  lg:w-1/3 bg-white shadow-lg rounded-2xl overflow-y-auto w-[100%] min-h-[80vh]">
 
           {loadingHistory ? (
-            <div className="flex items-center justify-center  py-10">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex items-center justify-center  py-10 h-[80vh]">
+              {/* <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div> */}
+              <AiLoader />
             </div>
           ) : (
             questionType.toLowerCase() !== "coding" ? <div> <h1 className="text-xl font-bold text-gray-800 mb-4 text-center m-3">History</h1>

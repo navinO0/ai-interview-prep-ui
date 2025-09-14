@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 
 const InterviewForm = ({
-    // States & setters
     useJD,
     setUseJD,
     role,
@@ -27,15 +26,11 @@ const InterviewForm = ({
     setJd,
     answer,
     setAnswer,
-
-    // Question & Feedback
     question,
     loadingQuestion,
     getQuestion,
     isSpeaking,
     stopSpeaking,
-
-    // Answer submission
     isRecording,
     startRecording,
     stopRecording,
@@ -44,7 +39,6 @@ const InterviewForm = ({
 }) => {
     return (
         <div>
-            {/* Toggle JD */}
             <div className="mb-4">
                 <FormControlLabel
                     control={
@@ -57,7 +51,6 @@ const InterviewForm = ({
                 />
             </div>
 
-            {/* Inputs */}
             {!useJD ? (
                 <div className="mb-4 flex gap-3 flex-wrap">
                     <TextField
@@ -125,14 +118,13 @@ const InterviewForm = ({
                 </div>
             )}
 
-            {/* Buttons */}
             <div className="flex gap-2">
                 <button
                     onClick={getQuestion}
                     disabled={loadingQuestion}
-                    className={`flex-1 rounded-lg px-4 py-2 transition text-white ${loadingQuestion
-                            ? "bg-blue-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700"
+                    className={`flex-1 rounded-lg button px-4 py-2 transition !text-white ${loadingQuestion
+                            ? "!bg-blue-400 !cursor-not-allowed"
+                            : "!bg-blue-600 !hover:bg-blue-700"
                         }`}
                 >
                     {loadingQuestion ? "Loading..." : "Get Question"}
@@ -141,7 +133,7 @@ const InterviewForm = ({
                 {isSpeaking && (
                     <button
                         onClick={stopSpeaking}
-                        className="bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 transition"
+                        className="!bg-red-600 !text-white button rounded-lg px-4 py-2 !hover:bg-red-700 transition"
                     >
                         Stop Speech
                     </button>
@@ -158,7 +150,6 @@ const InterviewForm = ({
                 </div>
             )}
 
-            {/* Answer */}
             {question && (
                 <div className="mt-4">
                     {questionType.toLowerCase() !== "coding" && (
@@ -177,9 +168,9 @@ const InterviewForm = ({
                                 <button
                                     onClick={startRecording}
                                     disabled={loadingSubmit}
-                                    className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                                            ? "bg-purple-400 cursor-not-allowed"
-                                            : "bg-purple-600 hover:bg-purple-700"
+                                    className={`w-1/2 rounded-lg px-4 py-2 button !text-white transition ${loadingSubmit
+                                            ? "!bg-purple-400 !cursor-not-allowed"
+                                            : "!bg-purple-600 !hover:bg-purple-700"
                                         }`}
                                 >
                                     Start Recording
@@ -187,7 +178,7 @@ const InterviewForm = ({
                             ) : (
                                 <button
                                     onClick={stopRecording}
-                                    className="w-1/2 bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 transition"
+                                    className="w-1/2 !bg-red-600 !text-white rounded-lg button px-4 py-2 hover:bg-red-700 transition"
                                 >
                                     Stop Recording
                                 </button>
@@ -197,9 +188,9 @@ const InterviewForm = ({
                         <button
                             onClick={submitAnswer}
                             disabled={loadingSubmit}
-                            className={`w-1/2 rounded-lg px-4 py-2 text-white transition ${loadingSubmit
-                                    ? "bg-green-400 cursor-not-allowed"
-                                    : "bg-green-600 hover:bg-green-700"
+                            className={`w-1/2 rounded-lg px-4 button py-2 !text-white transition ${loadingSubmit
+                                    ? "!bg-green-400 !cursor-not-allowed"
+                                    : "!bg-green-600 !hover:bg-green-700"
                                 }`}
                         >
                             {loadingSubmit ? "Submitting..." : "Submit Answer"}
