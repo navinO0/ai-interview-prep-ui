@@ -309,7 +309,7 @@ function App() {
 
             (
               <>
-                <Feedbackpg feedback={feedback} />
+                <Feedbackpg feedback={feedback} question_type={questionType}/>
                 <div className="flex gap-4 flex-end mt-4">
                   <button
                     onClick={onClickNexQns}
