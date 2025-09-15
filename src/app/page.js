@@ -192,7 +192,7 @@ function App() {
     artyomRef.current.fatality(); // stop previous sessions
     artyomRef.current.initialize({
       lang: "en-GB",
-      continuous: false,
+      continuous: true,
       listen: true,
       debug: true,
       speed: 1,

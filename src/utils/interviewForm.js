@@ -144,7 +144,7 @@ const InterviewForm = ({
             {question && (
                 <div className="mt-6">
                     <h2 className="font-semibold">Question:</h2>
-                    <div className="bg-gray-100 p-3 rounded-lg">
+                    <div className="bg-gray-100 overflow-x-auto p-3 rounded-lg">
                         <ReactMarkdown>{question || "Loading..."}</ReactMarkdown>
                     </div>
                 </div>
