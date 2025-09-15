@@ -198,7 +198,7 @@ function App() {
       speed: 1,
     });
 
-    artyomRef.current.say("Start speaking now!");
+    // artyomRef.current.say("Start speaking now!");
 
     artyomRef.current.addCommands({
       indexes: ["*"], // catch everything

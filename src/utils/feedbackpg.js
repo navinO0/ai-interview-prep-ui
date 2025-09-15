@@ -36,7 +36,7 @@ const Feedbackpg = ({ feedback, question_type }) => {
             )}
 
 
-            {!question_type.toLowerCase() === "coding" && feedback.userAnswer && (
+            {(question_type.toLowerCase() !== "coding" && feedback.userAnswer) && (
                 <div className="bg-emerald-50 p-5 rounded-2xl shadow-md border border-emerald-200">
                     <p className="font-semibold text-emerald-700 mb-3 text-lg">
                         Your Answer
