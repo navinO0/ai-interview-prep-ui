@@ -201,10 +201,10 @@ function App() {
     // artyomRef.current.say("Start speaking now!");
 
     artyomRef.current.addCommands({
-      indexes: ["*"], // catch everything
+      indexes: ["*"], 
       smart: true,
       action: (i, spokenText) => {
-        setAnswer(spokenText);
+        setAnswer((prev) => prev +" "+ spokenText);
         // stopRecording(); // auto stop after speaking
       },
     });
@@ -214,7 +214,7 @@ function App() {
 
   const stopRecording = () => {
     if (!artyomRef.current) return;
-    artyomRef.current.fatality(); // stops listening
+    artyomRef.current.fatality(); 
     setIsRecording(false);
   };
 
