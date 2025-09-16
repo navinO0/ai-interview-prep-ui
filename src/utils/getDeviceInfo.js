@@ -9,19 +9,6 @@ export const getDeviceInfo = async () => {
   const fingerprint = await fp.get();
 
   // Fetch city using IP-based geolocation
-  const getCity = async () => {
-  try {
-    const res = await fetch('/api/get-city');
-    const data = await res.json();
-    console.log(data);
-    return data.city || null;
-  } catch (error) {
-    console.error('Error fetching city:', error);
-    return null;
-  }
-};
-
-  const city = await getCity();
 
   return {
     fingerprint: fingerprint.visitorId,
@@ -32,7 +19,6 @@ export const getDeviceInfo = async () => {
     screenResolution: `${window.screen.width}x${window.screen.height}`,
     platform: navigator.platform,
     language: navigator.language,
-    city,
   };
 };
 
