@@ -8,10 +8,12 @@ const useProtectedRoute = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const token = Cookies.get("jwt_token");
-        if (!token || token === "undefined" || token === null || token === undefined) {
-            router.push("/login");
-        }
+        setTimeout(() => {
+            const token = Cookies.get("jwt_token");
+            if (!token || token === "undefined" || token === null || token === undefined) {
+                router.push("/login");
+            }
+        }, 3000);
     }, []);
 };
 

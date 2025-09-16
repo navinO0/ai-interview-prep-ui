@@ -46,47 +46,29 @@ function App() {
   const apiUrl = process.env.NEXT_PUBLIC_AI_INTERVIEW_HOST;
   const router = useRouter();
   const artyomRef = useRef(null);
+
+
+  const init = async () => {
+
+    if (!session?.user?.token || session?.user?.token === "undefined") return;
+    const Dinfo = await getDeviceInfo();
+    setDeviceInfo(Dinfo);
+
+    await registerUser(session.user, ['username', 'email', 'first_name'], Dinfo);
+  };
   useEffect(() => {
     if (typeof window !== "undefined") {
       artyomRef.current = new Artyom();
     }
+    init();
+    getHistory();
+
     return () => {
       stopSpeaking()
-    }
-    
-  }, []);
-  useProtectedRoute()
-  useMemo(() => {
-    const init = async () => {
-
-      if (!session?.user?.token || session?.user?.token === "undefined") return;
-      const Dinfo = await getDeviceInfo();
-      setDeviceInfo(Dinfo);
-
-      await registerUser(session.user, ['username', 'email', 'first_name'], Dinfo);
-
-
-      // const token = Cookies.get("jwt_token");
-      // if (token) {
-      //   setUserData(parseToken(token));
-      // }
-
-      // const redirect = Cookies.get("redirect");
-      // if (redirect) {
-      //   Cookies.remove("redirect");
-      //   router.push(redirect);
-      // }
-    };
-
-    init();
-  }, []);
-  useEffect(() => {
-    getHistory();
-    return () => {
-      // window.speechSynthesis.cancel();
       setError(null)
     };
   }, []);
+
 
   const speakQuestion = (text) => {
     if (!artyomRef.current && questionType.toLowerCase() === "coding") return;
@@ -147,11 +129,6 @@ function App() {
     }
   };
 
-  // const stopSpeaking = () => {
-  //   window.speechSynthesis.cancel();
-  //   setIsSpeaking(false);
-  // };
-
   const submitAnswer = async () => {
     try {
       setLoadingSubmit(true);
@@ -189,7 +166,7 @@ function App() {
       return;
     }
 
-    artyomRef.current.fatality(); // stop previous sessions
+    artyomRef.current.fatality();
     artyomRef.current.initialize({
       lang: "en-GB",
       continuous: true,
@@ -198,14 +175,11 @@ function App() {
       speed: 1,
     });
 
-    // artyomRef.current.say("Start speaking now!");
-
     artyomRef.current.addCommands({
-      indexes: ["*"], 
+      indexes: ["*"],
       smart: true,
       action: (i, spokenText) => {
-        setAnswer((prev) => prev +" "+ spokenText);
-        // stopRecording(); // auto stop after speaking
+        setAnswer((prev) => prev + " " + spokenText);
       },
     });
 
@@ -214,7 +188,7 @@ function App() {
 
   const stopRecording = () => {
     if (!artyomRef.current) return;
-    artyomRef.current.fatality(); 
+    artyomRef.current.fatality();
     setIsRecording(false);
   };
 
@@ -269,7 +243,7 @@ function App() {
     getQuestion();
   }
 
-
+  useProtectedRoute()
   return (
     <div className="flex flex-col  overflow-y-auto h-[92vh] ">
       <div className=" h-full h-auto w-full bg-gray-100 flex flex-col lg:flex-row gap-4 p-4 md:p-6 overflow-y-auto ">
@@ -309,13 +283,13 @@ function App() {
 
             (
               <>
-                <Feedbackpg feedback={feedback} question_type={questionType}/>
+                <Feedbackpg feedback={feedback} question_type={questionType} />
                 <div className="flex gap-4 flex-end mt-4">
                   <button
                     onClick={onClickNexQns}
                     className={`flex-1 rounded-lg px-4 py-2 !transition button !text-white cursor-pointer ${loadingQuestion
-                        ? "!bg-blue-400 !cursor-not-allowed"
-                        : "!bg-blue-600 !hover:bg-blue-700"
+                      ? "!bg-blue-400 !cursor-not-allowed"
+                      : "!bg-blue-600 !hover:bg-blue-700"
                       }`}
                   >
                     Next Question
