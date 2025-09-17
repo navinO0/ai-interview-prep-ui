@@ -54,7 +54,7 @@ const InterviewForm = ({
             {!useJD ? (
                 <div className="mb-4 flex gap-3 flex-wrap">
                     <TextField
-                        label="Role"
+                        label="Enter Job Role"
                         variant="outlined"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
@@ -74,7 +74,7 @@ const InterviewForm = ({
                             onChange={(e) => setDifficulty(e.target.value)}
                         >
                             <MenuItem value="">
-                                <em>None</em>
+                                <em>Select Difficulty</em>
                             </MenuItem>
                             <MenuItem value="easy">Easy</MenuItem>
                             <MenuItem value="medium">Medium</MenuItem>

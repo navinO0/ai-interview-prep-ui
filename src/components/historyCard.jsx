@@ -1,8 +1,14 @@
 "use client";
-import TruncatedMarkdown from "@/utils/truncatedMarkdown";
-import * as Accordion from "@radix-ui/react-accordion";
+import * as React from "react";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ReactMarkdown from "react-markdown";
-import { ChevronDown } from "lucide-react";
+import TruncatedMarkdown from "@/utils/truncatedMarkdown";
 
 export default function HistoryCard({ history }) {
   const data = history || [
@@ -24,45 +30,56 @@ export default function HistoryCard({ history }) {
   ];
 
   return (
-    <Accordion.Root
-      type="multiple"
-      className="w-full bg-white rounded-2xl shadow-lg divide-y divide-gray-200 
-                 sm:max-w-full md:max-w-3xl lg:max-w-5xl mx-auto overflow-hidden"
-    >
+    <div className="w-full max-w-5xl mx-auto grid gap-4 p-4">
       {data.map((item) => (
-        <Accordion.Item
+        <Card
           key={item.id}
-          value={item.id}
-          className="border-b last:border-none"
+          sx={{
+            borderRadius: 3,
+            boxShadow: 3,
+            overflow: "auto",
+          }}
         >
-          <Accordion.Header>
-            <Accordion.Trigger
-              className="w-full flex justify-between text-left items-start px-5 py-4 
-                         font-semibold text-gray-800 text-base sm:text-lg 
-                         hover:bg-gray-100 transition-colors group"
+          <Accordion sx={{ boxShadow: "none" }}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                px: 2,
+                py: 2,
+                "& .MuiAccordionSummary-content": {
+                  margin: 0,
+                },
+              }}
             >
-              <TruncatedMarkdown text={item.label} />
-              <ChevronDown
-                className="h-5 w-5 text-gray-500 transition-transform duration-300 group-data-[state=open]:rotate-180"
-              />
-            </Accordion.Trigger>
-          </Accordion.Header>
-
-          <Accordion.Content
-            className="px-5 py-4 bg-gray-50 text-sm sm:text-base 
-                       text-gray-700 leading-relaxed animate-accordion-down"
-          >
-            {item.children?.map((child) => (
-              <div
-                key={child.id}
-                className="pl-4 border-l-2 border-blue-400/70 mb-3 last:mb-0"
-              >
-                <ReactMarkdown>{child.label}</ReactMarkdown>
-              </div>
-            ))}
-          </Accordion.Content>
-        </Accordion.Item>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <TruncatedMarkdown text={item.label} />
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ bgcolor: "grey.50", px: 2, py: 2 }}>
+              {item.children?.map((child) => (
+                <Card
+                  key={child.id}
+                  variant="outlined"
+                  sx={{
+                    mb: 2,
+                    borderRadius: 2,
+                    p: 2,
+                    "&:last-child": { mb: 0 },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    component="div"
+                  >
+                    <ReactMarkdown>{child.label}</ReactMarkdown>
+                  </Typography>
+                </Card>
+              ))}
+            </AccordionDetails>
+          </Accordion>
+        </Card>
       ))}
-    </Accordion.Root>
+    </div>
   );
 }

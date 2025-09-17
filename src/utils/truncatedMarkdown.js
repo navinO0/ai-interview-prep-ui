@@ -7,7 +7,7 @@ function TruncatedMarkdown({ text }) {
   return (
     <div>
       <div
-        className={`${
+        className={` ${
           expanded ? "" : "line-clamp-3"
         } text-sm sm:text-base overflow-hidden`}
       >
@@ -20,7 +20,7 @@ function TruncatedMarkdown({ text }) {
           onClick={() => setExpanded(!expanded)}
           className="hover:underline text-sm mt-1"
         >
-          {expanded ? "Show less" : "..."}
+          {expanded ? "Show less" : "show more"}
         </button>
       )}
     </div>

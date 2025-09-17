@@ -19,12 +19,12 @@ import AiLoader from "@/utils/aiLoader";
 
 
 function App() {
-  const [role, setRole] = useState("node.js backend developer");
+  const [role, setRole] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("");
   const [qunsId, setQnsId] = useState(0);
   const [topic, setTopic] = useState("");
   const [history, setHistory] = useState([]);
@@ -118,7 +118,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch question");
+      setError("Failed to fetch question, please try again!");
       if (err.response && err.response.status === 401 || err.response.status === 401) {
         Cookies.remove('jwt_token');
         router.push("/session-expired");
@@ -147,7 +147,7 @@ function App() {
       setFeedback(res.data.data.feedback);
     } catch (err) {
       console.error(err);
-      setError("Failed to get feedback");
+      setError("Failed to get feedback, please try again!");
       if (err.response && err.response.status === 401 || err.response.status === 401) {
         Cookies.remove('jwt_token');
         router.push("/session-expired");
@@ -219,7 +219,7 @@ function App() {
           }
         } catch (err) {
           console.error(err);
-          setError("Failed to get history");
+          setError("Failed to get history, please try again!");
 
           if (err.response && err.response.status === 401) {
             Cookies.remove("jwt_token");
