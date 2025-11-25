@@ -37,7 +37,7 @@ function App() {
 
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [error, setError] = useState(null)
   const [deviceInfo, setDeviceInfo] = useState(null);
@@ -61,7 +61,7 @@ function App() {
       artyomRef.current = new Artyom();
     }
     init();
-    getHistory();
+  // getHistory();  
 
     return () => {
       stopSpeaking()
@@ -145,6 +145,7 @@ function App() {
         }
       });
       setFeedback(res.data.data.feedback);
+      getHistory();  
     } catch (err) {
       console.error(err);
       setError("Failed to get feedback, please try again!");
