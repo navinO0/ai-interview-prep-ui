@@ -7,46 +7,33 @@ import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
-import loginWithCodeFunc from "@/utils/loginWithCodeFunc";
-import { encryptObjectValues } from "@/utils/crypto-utils";
 import MiniLoader from "@/utils/miniLoader";
 import ErroToaster from "@/utils/errorToaster";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { getDeviceInfo } from "@/utils/getDeviceInfo";
 import { useUserContext } from "../app/providers";
-
+import { useAuth } from "../../../server/user-management-ui"; // Using submodule
 
 export function LoginForm({ className, ...props }) {
-  const [deviceInfo, setDeviceInfo] = useState(null);
   const router = useRouter();
   const { data: session } = useSession();
   const { setIsLoggedIn } = useUserContext();
-
-  useEffect(() => {
-    async function fetchData() {
-      const token = Cookies.get("jwt_token");
-      if (!token && session) {
-       signOut()
-      }
-    }
-    fetchData();
-     const fetchDeviceInfo = async () => {
-          const info = await getDeviceInfo();
-          setDeviceInfo(info);
-        };
-    
-        fetchDeviceInfo();
-  }, [router]);
-  async function handleEncrypt(data) {
-    return await encryptObjectValues(data, ['username', 'password']);
-  }
+  const { login, loginWithCode, loginWithGoogle, isAuthenticated, loading: authLoading, error: authError } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [codeError, setCodeError] = useState(null);
 
-  const [isLoading1, setIsLoading1] = useState(false);
-  const [error1, setError1] = useState(null);
+  useEffect(() => {
+    if (isAuthenticated()) {
+      setIsLoggedIn(true);
+      router.push("/");
+    } else if (session && !isAuthenticated()) {
+      // If we have a session but no token, we might need to sync with backend
+       // Or handle session logout if token is invalid
+       // For now, let's leave as is or sign out
+       // signOut(); // Logic from original
+    }
+  }, [isAuthenticated, router, session, setIsLoggedIn]);
 
   const form = useForm({
     defaultValues: {
@@ -59,87 +46,81 @@ export function LoginForm({ className, ...props }) {
   const onSubmit = async (values) => {
     setIsLoading(true);
     setError(null);
+    setCodeError(null);
     const { loginCode, username, password } = values;
-    if (loginCode) {
-      const logi = await loginWithCodeFunc(loginCode);
-      if (logi !== true) {
-        setError1(logi)
-      }
-      router.push("/")
-    }
-    const encryptedData = await handleEncrypt({ username, password },);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_HOST || "http://127.0.0.1:3000"}/user/public/login`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...encryptedData,
-          device_info : deviceInfo,
-        }),
-      });
 
-      if (response.ok) {
-        const resp = await response.json();
-        const token = resp.data.token;
-        if (!token || token === 'undefined' || token === 'null' || token === undefined) {
-          setError(resp.message || 'An error occurred while logging in.');
-          return
-        }
-        Cookies.set('jwt_token', token, { expires: 1 });
-        setIsLoggedIn(true);
-        router.push('/');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'An error occurred while logging in.');
-      }
-    } catch (error) {
-      setError('Failed to connect to the server.');
-      console.error('Login failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const codeSubmit = async (values) => {
-    setIsLoading1(true);
-    setError1(null);
-    const { loginCode } = values;
     try {
       if (loginCode) {
-        const logi = await loginWithCodeFunc(loginCode);
-        if (!logi.status || logi.status === 'false') {
-          setError1(logi.message)
-          return
+        // QR Code Login
+        const result = await loginWithCode(loginCode, process.env.NEXT_PUBLIC_HOST_QR || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000");
+        if (result.success) {
+           setIsLoggedIn(true);
+           router.push("/");
+           return;
+        } else {
+           setCodeError(result.message);
         }
-        router.push("/")
+      }
+
+      if (username && password) {
+         // Standard Login
+         const result = await login(
+             username, 
+             password, 
+             process.env.NEXT_PUBLIC_HOST_QR || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000"
+         );
+
+         if (result.success) {
+            setIsLoggedIn(true);
+            router.push("/");
+         } else {
+            setError(result.message);
+         }
       }
     } catch (error) {
-      setError1('Failed to connect to the server.');
-      console.error('Login failed:', error);
+       setError("An unexpected error occurred");
     } finally {
-      setIsLoading1(false);
+       setIsLoading(false);
     }
   };
 
- 
-    const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
+    try {
       const res = await signIn("google");
+      
       if (res?.error) {
-        console.error("Login failed", res.error);
+        setError("Google sign-in failed");
+        return;
       }
-      else {
-        Cookies.set("jwt_token", session?.user?.token || null , { expires: 7 });
-      }
+      
+      // Wait a bit for session to be available
+      setTimeout(async () => {
+        if (session?.user) {
+            const result = await loginWithGoogle({
+                email: session.user.email,
+                name: session.user.name,
+                google_id: session.user.id
+            }, process.env.NEXT_PUBLIC_HOST_QR || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000");
+
+            if (result.success) {
+                setIsLoggedIn(true);
+                router.push('/');
+            } else {
+                setError(result.message || "Backend authentication failed");
+            }
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Google login error:", error);
+      setError("Google sign-in failed");
+    }
   };
   
   const enableNextAuth = process.env.NEXT_PUBLIC_AUTH_ENABLE === "true" || false; 
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-  <Card className="overflow-hidden p-0">
+    <div className={cn("flex flex-col gap-6 animate-fadeIn", className)} {...props}>
+  <Card className="overflow-hidden p-0 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20">
     <CardContent className="grid p-0 md:grid-cols-2">
       <form className="p-6 md:p-8 bg-slate-900 text-white" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-6">
@@ -156,8 +137,7 @@ export function LoginForm({ className, ...props }) {
               type="text"
               placeholder="Username"
               {...form.register("username")}
-              required
-              className="bg-slate-800 text-white border border-slate-600 placeholder-gray-500"
+              className="bg-slate-800 text-white border border-slate-600 placeholder-gray-500 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:scale-[1.02]"
             />
           </div>
           <div className="grid gap-3">
@@ -169,14 +149,13 @@ export function LoginForm({ className, ...props }) {
               type="password"
               placeholder="********"
               {...form.register("password")}
-              required
-              className="bg-slate-800 text-white border border-slate-600 placeholder-gray-500"
+              className="bg-slate-800 text-white border border-slate-600 placeholder-gray-500 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:scale-[1.02]"
             />
           </div>
-          <Button type="submit" className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-            {isLoading ? <MiniLoader /> : "Login"}
+          <Button type="submit" className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50" disabled={isLoading || authLoading}>
+            {isLoading || authLoading ? <MiniLoader /> : "Login"}
           </Button>
-          <ErroToaster message={error} />
+          <ErroToaster message={error || authError} />
           <div className="text-center text-sm text-gray-400">
             Don&apos;t have an account?{" "}
             <a href="/register" className="underline underline-offset-4 text-blue-400">
@@ -185,12 +164,12 @@ export function LoginForm({ className, ...props }) {
               </div>
               {enableNextAuth && <div className="flex flex-col gap-6">
             {!session ? (
-              <Button onClick={handleLogin} className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700">
+              <Button type="button" onClick={handleGoogleLogin} className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700">
                 Sign in with Google
               </Button>
             ) : (
               <div>
-                <Button onClick={() => signOut()} className="w-full cursor-pointer bg-red-600 hover:bg-red-700">
+                <Button type="button" onClick={() => signOut()} className="w-full cursor-pointer bg-red-600 hover:bg-red-700">
                   Logout
                 </Button>
               </div>
@@ -205,25 +184,23 @@ export function LoginForm({ className, ...props }) {
             alt="Profile Image"
             className="w-full h-full object-cover"
           />
-          <Label htmlFor="picture" className="text-white">Have a code ?</Label>
+          <Label htmlFor="loginCode" className="text-white">Have a code ?</Label>
           <Input
             id="loginCode"
             type="text"
-            placeholder="********"
+            placeholder="Enter Code"
             {...form.register("loginCode")}
-            required
             className="bg-slate-800 text-white border border-slate-600 placeholder-gray-500"
           />
 
-          <Button type="button" onClick={form.handleSubmit(codeSubmit)} className="w-full cursor-pointer bg-green-600 hover:bg-green-700" disabled={isLoading1}>
-            {isLoading1 ? <MiniLoader /> : "Submit"}
+          <Button type="button" onClick={form.handleSubmit(onSubmit)} className="w-full cursor-pointer bg-green-600 hover:bg-green-700" disabled={isLoading || authLoading}>
+            {isLoading || authLoading ? <MiniLoader /> : "Submit Code"}
           </Button>
-          <ErroToaster message={error1} />
+          <ErroToaster message={codeError} />
         </div>
       </div>
     </CardContent>
   </Card>
 </div>
-
   );
 }

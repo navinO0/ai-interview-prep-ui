@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@radix-ui/react-separator";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { IoLogOutOutline } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useApi } from "./useApi";
 import { getDeviceInfo } from "./getDeviceInfo";
 import { SlScreenDesktop } from "react-icons/sl";
@@ -21,7 +21,7 @@ const DeviceManager = () => {
 
   const { request } = useApi();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
       setIsLoading(true);
       setError(null);
       setSuccess(null);
@@ -36,7 +36,7 @@ const DeviceManager = () => {
         console.error("Failed to fetch devices", error);
         setError(error);
       }
-    };
+    }, [request, setError, setSuccess]);
 
   useEffect(() => {
     const fetchDeviceInfo = async () => {
@@ -45,7 +45,7 @@ const DeviceManager = () => {
     }
     fetchDeviceInfo();
     fetchData();
-  }, [request]);
+  }, [fetchData]);
 
 
   const handleLogout = async (fingerprint, remove_all_devices = false) => {
@@ -97,7 +97,12 @@ const DeviceManager = () => {
               </div>)
             })
           }
-            <p className=" mt-2 text-center text-md transition-all duration-300 text-muted-foreground hover:text-red-500 hover:[text-shadow:0_0_8px_#ef4444] cursor-pointer">logout from all the devices</p>
+            <p 
+              className="mt-2 text-center text-md transition-all duration-300 text-muted-foreground hover:text-red-500 hover:[text-shadow:0_0_8px_#ef4444] cursor-pointer"
+              onClick={() => handleLogout(null, true)}
+            >
+              logout from all the devices
+            </p>
           </>}
           {/* <h4 className="text-sm leading-none font-medium">Radix Primitives</h4>
         <p className="text-muted-foreground text-sm">

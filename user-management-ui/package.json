@@ -1,0 +1,19 @@
+{
+  "name": "user-management-ui",
+  "version": "1.0.0",
+  "description": "Reusable authentication UI components for Next.js",
+  "main": "index.js",
+  "keywords": ["authentication", "ui-components", "react", "nextjs"],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "next": "^14.0.0"
+  },
+  "dependencies": {
+    "js-cookie": "^3.0.5",
+    "axios": "^1.6.0",
+    "ua-parser-js": "^1.0.37",
+    "@fingerprintjs/fingerprintjs": "^4.2.1"
+  }
+}
