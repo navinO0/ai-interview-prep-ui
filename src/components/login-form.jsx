@@ -11,7 +11,7 @@ import MiniLoader from "@/utils/miniLoader";
 import ErroToaster from "@/utils/errorToaster";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useUserContext } from "../app/providers";
-import { useAuth } from "../../../server/user-management-ui"; // Using submodule
+import { useAuth } from "user-management-ui"; // Using submodule
 
 export function LoginForm({ className, ...props }) {
   const router = useRouter();
@@ -67,7 +67,7 @@ export function LoginForm({ className, ...props }) {
          const result = await login(
              username, 
              password, 
-             process.env.NEXT_PUBLIC_HOST_QR || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000"
+             process.env.NEXT_PUBLIC_USER_SERVICE_HOST || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:3000"
          );
 
          if (result.success) {
